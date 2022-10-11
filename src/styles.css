@@ -31,6 +31,10 @@ body {
     position: fixed;
 }
 
+.contact_info {
+    position: fixed;
+}
+
 .about_me_pararaph {
     position: fixed;
 }
@@ -98,6 +102,29 @@ body {
     font-size: 1.5em;
     font-weight: 400;
     line-height: 1;
+    background-size: 45vw auto, 45vw auto, 30vw auto;
+    background-repeat: repeat-x;
+    background-position: 0px 15%, 20px 25%, -50px 2vw;
+}
+
+#project_info {
+    display: flex;
+    position: relative;
+}
+
+#project_info p {
+    margin: 0 auto;
+    margin-left: 10%;
+    position: relative;
+    background-color: #e09f7d;
+    font-family: "Anton", sans-serif;
+    width: 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background-position 2s, background-color 2s;
+    font-size: 1.5em;
+    font-weight: 400;
+    line-height: 1;
     background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw-o.png'), url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw6-o.png'), url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw5-o.png');
     background-size: 45vw auto, 45vw auto, 30vw auto;
     background-repeat: repeat-x;
@@ -124,6 +151,29 @@ body {
     background-size: 45vw auto, 45vw auto, 30vw auto;
     background-repeat: repeat-x;
     background-position: 0px 15%, 20px 25%, -50px 2vw;
+}
+
+#contact_info p {
+    padding: 0 20px;
+    transform: translateY(80%);
+    text-align: center;
+    margin: 0 auto;
+    display: inline-block;
+    position: fixed;
+    background-color: #e09f7d;
+    font-family: "Anton", sans-serif;
+    width: 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background-position 1s, background-color 1s;
+    font-size: 4em;
+    font-weight: 400;
+    line-height: 1;
+    background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw-o.png'), url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw6-o.png'), url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/74321/tw5-o.png');
+    background-size: 45vw auto, 45vw auto, 30vw auto;
+    background-repeat: repeat-x;
+    background-position: 0px 15%, 20px 25%, -50px 2vw;
+    text-decoration: underline;
 }
 
 #about_app h1 {
@@ -232,11 +282,6 @@ a:focus {
 .frame__demos-title {
     display: inline-block;
     margin: 0 1.5rem 0 0;
-}
-
-.frame__demo--current,
-.frame__demo--current:hover {
-    color: var(--color-text);
 }
 
 @media screen and (min-width:53em) {
