@@ -30,7 +30,6 @@ const vertex = `
             float pixelWidth = 1.0 / (uResolution.y / uDPR);
             normal *= pixelWidth * uThickness;
 
-            // When the points are on top of each other, shrink the line to avoid artifacts.
             float dist = length(nextScreen - prevScreen);
             normal *= smoothstep(0.0, 0.02, dist);
 
@@ -44,115 +43,100 @@ const vertex = `
         }
     `;
 
-{
-    const renderer = new Renderer({ dpr: 2 });
-    const gl = renderer.gl;
-    document.body.appendChild(gl.canvas);
-    gl.clearColor(8.0 / 255.0, 14.0 / 255.0, 44.0 / 255.0, 1)
+const renderer = new Renderer({ dpr: 2 });
+const gl = renderer.gl;
+document.body.appendChild(gl.canvas);
+gl.clearColor(8.0 / 255.0, 14.0 / 255.0, 44.0 / 255.0, 1)
 
-    const scene = new Transform();
+const scene = new Transform();
+const lines = [];
+const count = 20;
 
-    const lines = [];
+function resize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    lines.forEach(line => line.polyline.resize());
+}
+window.addEventListener("resize", resize, true);
 
-    function resize() {
-        renderer.setSize(window.innerWidth, window.innerHeight);
+function random(a, b) {
+    const alpha = Math.random();
+    return a * (1.0 - alpha) + b * alpha;
+}
 
-        // We call resize on the polylines to update their resolution uniforms
-        lines.forEach(line => line.polyline.resize());
+const color = "#f7f1d3"
+
+const line = {
+    spring: random(0.02, 0.1),
+    friction: random(0.7, 0.95),
+    mouseVelocity: new Vec3(),
+    mouseOffset: new Vec3(random(-1, 1) * 0.02)
+};
+
+const points = (line.points = []);
+for (let i = 0; i < count; i++) points.push(new Vec3());
+
+line.polyline = new Polyline(gl, {
+    points,
+    vertex,
+    uniforms: {
+        uColor: { value: new Color(color) },
+        uThickness: { value: random(20, 50) }
     }
-    window.addEventListener("resize", resize, true);
+});
 
-    // Just a helper function to make the code neater
-    function random(a, b) {
-        const alpha = Math.random();
-        console.log(alpha);
-        return a * (1.0 - alpha) + b * alpha;
+line.polyline.mesh.setParent(scene);
+lines.push(line);
+resize();
+
+const mouse = new Vec3();
+if ("ontouchstart" in window) {
+    window.addEventListener("touchstart", updateMouse, false);
+    window.addEventListener("touchmove", updateMouse, false);
+} else {
+    window.addEventListener("mousemove", updateMouse, false);
+}
+
+function updateMouse(e) {
+    if (e.changedTouches && e.changedTouches.length) {
+        e.x = e.changedTouches[0].pageX;
+        e.y = e.changedTouches[0].pageY;
     }
-
-    const color = "#f7f1d3"
-
-    const line = {
-        spring: 0.02 * (1.0 - 0.3161255585017288) + 0.1 * 0.3161255585017288,
-        friction: 0.7 * (1.0 - 0.8300841189842667) + 0.95 * 0.8300841189842667,
-        mouseVelocity: new Vec3(),
-        mouseOffset: new Vec3((-1 * (1.0 - 0.907566037477852) + 1 * 0.907566037477852) * 0.02)
-    };
-
-    // Create an array of Vec3s (eg [[0, 0, 0], ...])
-    const count = 20;
-    const points = (line.points = []);
-    for (let i = 0; i < count; i++) points.push(new Vec3());
-
-    line.polyline = new Polyline(gl, {
-        points,
-        vertex,
-        uniforms: {
-            uColor: { value: new Color(color) },
-            uThickness: { value: 20 * (1.0 - 0.6989577478827917) + 50 * 0.6989577478827917 }
-        }
-    });
-
-    line.polyline.mesh.setParent(scene);
-
-    lines.push(line);
-
-    // Call initial resize after creating the polylines
-    resize();
-
-    // Add handlers to get mouse position
-    const mouse = new Vec3();
-    if ("ontouchstart" in window) {
-        window.addEventListener("touchstart", updateMouse, false);
-        window.addEventListener("touchmove", updateMouse, false);
-    } else {
-        window.addEventListener("mousemove", updateMouse, false);
-    }
-
-    function updateMouse(e) {
-        if (e.changedTouches && e.changedTouches.length) {
-            e.x = e.changedTouches[0].pageX;
-            e.y = e.changedTouches[0].pageY;
-        }
-        if (e.x === undefined) {
-            e.x = e.pageX;
-            e.y = e.pageY;
-        }
-
-        // Get mouse value in -1 to 1 range, with y flipped
-        mouse.set(
-            (e.x / gl.renderer.width) * 2 - 1,
-            (e.y / gl.renderer.height) * -2 + 1,
-            0
-        );
+    if (e.x === undefined) {
+        e.x = e.pageX;
+        e.y = e.pageY;
     }
 
-    const tmp = new Vec3();
+    mouse.set(
+        (e.x / gl.renderer.width) * 2 - 1,
+        (e.y / gl.renderer.height) * -2 + 1,
+        0
+    );
+}
 
+const tmp = new Vec3();
+requestAnimationFrame(update);
+
+function update(t) {
     requestAnimationFrame(update);
 
-    function update(t) {
-        requestAnimationFrame(update);
-
-        lines.forEach(line => {
-            // Update polyline input points
-            for (let i = line.points.length - 1; i >= 0; i--) {
-                if (!i) {
-                    // For the first point, spring ease it to the mouse position
-                    tmp
-                        .copy(mouse)
-                        .add(line.mouseOffset)
-                        .sub(line.points[i])
-                        .multiply(line.spring);
-                    line.mouseVelocity.add(tmp).multiply(line.friction);
-                    line.points[i].add(line.mouseVelocity);
-                } else {
-                    // The rest of the points ease to the point in front of them, making a line
-                    line.points[i].lerp(line.points[i - 1], 0.9);
-                }
+    lines.forEach(line => {
+        for (let i = line.points.length - 1; i >= 0; i--) {
+            if (!i) {
+                tmp
+                    .copy(mouse)
+                    .add(line.mouseOffset)
+                    .sub(line.points[i])
+                    .multiply(line.spring);
+                line.mouseVelocity.add(tmp).multiply(line.friction);
+                line.points[i].add(line.mouseVelocity);
+            } else {
+                line.points[i].lerp(line.points[i - 1], 0.9);
             }
-            line.polyline.updateGeometry();
-        });
+        }
+        line.polyline.updateGeometry();
+    });
 
-        renderer.render({ scene });
-    }
+    renderer.render({ scene });
 }
+
+
